@@ -8,7 +8,8 @@ public final class SnoreDetector {
             this.db=db; this.baselineDb=baselineDb; this.lowBandRatio=lowBandRatio; this.calibrated=calibrated; this.snore=snore;
         }
     }
-    private static final int CALIBRATION_FRAMES=28;
+    // 32 frames × 1024 samples / 16000 Hz = 2.048 seconds.
+    static final int CALIBRATION_FRAMES=32;
     private static final double[] FREQUENCIES={70,100,140,200,280,400,600,900,1300,2000};
     private final int sensitivity;
     private final double[] previous=new double[FREQUENCIES.length];
@@ -27,7 +28,7 @@ public final class SnoreDetector {
         if(calibrationCount<CALIBRATION_FRAMES) {
             calibrationSum+=db; calibrationCount++;
             if(calibrationCount==CALIBRATION_FRAMES) baselineDb=calibrationSum/CALIBRATION_FRAMES;
-            return new Analysis(db,baselineDb,lowRatio,false,false);
+            return new Analysis(db,baselineDb,lowRatio,calibrationCount>=CALIBRATION_FRAMES,false);
         }
         if(candidateFrames==0) baselineDb=baselineDb*0.997+db*0.003;
         double extraDb=15-sensitivity*2;
