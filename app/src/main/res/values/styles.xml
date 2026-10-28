@@ -1,0 +1,4 @@
+<resources><style name="Theme.SnoreGuard" parent="android:style/Theme.Material.Light.NoActionBar">
+<item name="android:fontFamily">sans</item><item name="android:windowBackground">@color/night</item><item name="android:colorAccent">@color/mint</item>
+<item name="android:navigationBarColor">@color/night</item><item name="android:statusBarColor">@color/night</item><item name="android:windowLightStatusBar">false</item>
+</style></resources>
