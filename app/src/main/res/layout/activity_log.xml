@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0C111B"
+    android:orientation="vertical"
+    android:padding="20dp">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="夜间日志"
+        android:textColor="#F5F7FA"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+    <TextView
+        android:id="@+id/logSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="#9BA8BC"
+        android:textSize="13sp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/backButton"
+            style="@style/LogButton"
+            android:text="返回" />
+        <Button
+            android:id="@+id/exportButton"
+            style="@style/LogButton"
+            android:text="导出 TXT" />
+        <Button
+            android:id="@+id/clearButton"
+            style="@style/LogButton"
+            android:text="清空" />
+    </LinearLayout>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp">
+        <ListView
+            android:id="@+id/logList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#253044"
+            android:dividerHeight="1dp" />
+        <TextView
+            android:id="@+id/logEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="还没有夜间事件\n开始检测后，校准、鼾声和音量变化会显示在这里"
+            android:textColor="#7F8CA0"
+            android:textSize="15sp" />
+    </FrameLayout>
+</LinearLayout>

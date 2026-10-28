@@ -1,19 +1,53 @@
 package com.local.snoreguard;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
-import java.util.Random;
+
 public class SnoreDetectorTest {
-    @Test public void learnsBackgroundWithoutTriggering() {
-        SnoreDetector d=new SnoreDetector(3); Random r=new Random(42);
-        for(int f=0;f<90;f++) { short[] n=new short[1024]; for(int i=0;i<n.length;i++) n[i]=(short)(r.nextGaussian()*350); assertFalse(d.process(n,n.length,16000).snore); }
+    private static final int RATE = 16000;
+    private static final int SIZE = 1024;
+
+    private short[] tone(double frequency, double amplitude, int seed) {
+        short[] result = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            double noise = ((i * 31 + seed * 17) % 101 - 50) * 0.3;
+            result[i] = (short) (amplitude * Math.sin(2 * Math.PI * frequency * i / RATE) + noise);
+        }
+        return result;
     }
-    @Test public void detectsLowFrequencySoundAboveBackground() {
-        SnoreDetector d=new SnoreDetector(3);
-        for(int f=0;f<30;f++) assertFalse(d.process(tone(100,120,f),1024,16000).snore);
-        boolean detected=false; for(int f=30;f<45;f++) detected|=d.process(tone(120,7000,f),1024,16000).snore;
-        assertTrue(detected);
+
+    @Test public void quietBackgroundDoesNotTrigger() {
+        SnoreDetector detector = new SnoreDetector(3);
+        boolean triggered = false;
+        for (int i = 0; i < 100; i++) triggered |= detector.process(tone(130, 90, i), SIZE, RATE).snore;
+        assertFalse(triggered);
     }
-    private short[] tone(double hz,double amplitude,int frame) {
-        short[] r=new short[1024]; for(int i=0;i<r.length;i++) { long n=(long)frame*r.length+i; r[i]=(short)(Math.sin(2*Math.PI*hz*n/16000)*amplitude); } return r;
+
+    @Test public void calibrates32FramesAndAveragesPerFrameDb() {
+        SnoreDetector detector = new SnoreDetector(3);
+        double sumDb = 0;
+        SnoreDetector.Analysis analysis = null;
+        for (int i = 0; i < SnoreDetector.CALIBRATION_FRAMES; i++) {
+            short[] frame = tone(130, 1000, i);
+            analysis = detector.process(frame, SIZE, RATE);
+            double sumSquares = 0;
+            for (short sample : frame) sumSquares += (double) sample * sample;
+            double rms = Math.sqrt(sumSquares / SIZE);
+            sumDb += Math.max(-90, 20 * Math.log10(Math.max(rms, 0.00001)));
+            assertEquals(i == 31, analysis.calibrated);
+            assertFalse(analysis.snore);
+        }
+        assertEquals(sumDb / 32, analysis.baselineDb, 0.00001);
+    }
+
+    @Test public void loudLowFrequencyAboveBackgroundTriggers() {
+        SnoreDetector detector = new SnoreDetector(3);
+        for (int i = 0; i < 32; i++) detector.process(tone(130, 100, i), SIZE, RATE);
+        boolean triggered = false;
+        for (int i = 0; i < 30; i++) triggered |= detector.process(tone(130, 9000, i + 40), SIZE, RATE).snore;
+        assertTrue(triggered);
     }
 }
