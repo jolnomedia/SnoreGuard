@@ -81,6 +81,21 @@ public final class SnoreService extends Service {
                 if (stopAfterRestore) finishStop(STATE_STOPPED, "已停止检测，保留你手动设置的音量");
                 return;
             }
+            if (!restoring) {
+                int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                int cap = Prefs.maxVolumeStep(SnoreService.this, max);
+                if (current >= cap) {
+                    ramp.cancel();
+                    sendStatus(STATE_SNORE, "已到自动提高上限 " + cap + " / " + max + " 格");
+                    return;
+                }
+                int oldTarget = ramp.getTarget();
+                ramp.limitTarget(cap);
+                if (ramp.getTarget() != oldTarget) {
+                    EventLog.add(SnoreService.this, "上限更新",
+                            "自动提高目标由 " + oldTarget + " 格调整为上限 " + cap + " 格");
+                }
+            }
             int next = ramp.next(current, SystemClock.elapsedRealtime());
             if (next != current) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, next, 0);
@@ -242,18 +257,19 @@ public final class SnoreService extends Service {
         }
         int current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int cap = Math.round(max * Prefs.cap(this) / 100f);
+        int cap = Prefs.maxVolumeStep(this, max);
         if (lastSetVolume >= 0 && current != lastSetVolume) {
             originalVolume = current;
             adjustedByUs = false;
             lastSetVolume = -1;
         }
-        int target = Math.min(cap, current + Prefs.step(this));
+        int target = VolumePolicy.raiseTarget(current, Prefs.step(this), cap, max);
         if (target > current) {
             ramp.start(current, target);
             lastAdjustmentAt = now;
             eventCount++;
-            EventLog.add(this, "开始渐变", "目标媒体音量 " + target + "，每 1.5 秒最多提高 1 格");
+            EventLog.add(this, "开始渐变", "目标媒体音量 " + target + " 格（自动上限 " + cap
+                    + " / " + max + " 格），每 1.5 秒最多提高 1 格");
             main.removeCallbacks(rampStep);
             main.post(rampStep);
             updateNotification("正在小步提高媒体音量 · 连续安静后缓慢恢复");

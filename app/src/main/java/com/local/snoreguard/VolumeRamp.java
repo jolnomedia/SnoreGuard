@@ -25,6 +25,11 @@ public final class VolumeRamp {
         return next;
     }
 
+    /** Lowers an unfinished raise target without changing the step schedule. */
+    public void limitTarget(int cap) {
+        if (active && cap < target) target = cap;
+    }
+
     public boolean isActive() { return active; }
     public int getTarget() { return target; }
     public void cancel() { active = false; }
